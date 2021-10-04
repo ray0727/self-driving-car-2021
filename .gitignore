@@ -33,3 +33,12 @@
 
 #textbook
 textbook/*
+
+#ROS
+devel/
+build/
+.catkin_workspace
+*.bag
+*.pyc
+.vscode/
+*.zip
