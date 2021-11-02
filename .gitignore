@@ -42,3 +42,4 @@ build/
 *.pyc
 .vscode/
 *.zip
+*.pcd
