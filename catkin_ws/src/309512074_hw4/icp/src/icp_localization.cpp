@@ -29,6 +29,9 @@ private:
 
   sensor_msgs::PointCloud2 map_pc, icp_pc;
   pcl::PointCloud<pcl::PointXYZI>::Ptr load_map;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr map_voxel;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pc_input;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pc_input_voxel;
   Eigen::Matrix4f initial_guess;
   tf::TransformListener listener;
 
@@ -41,23 +44,26 @@ public:
 };
 
 icp_localization::icp_localization(){
+  load_map.reset(new pcl::PointCloud<pcl::PointXYZI>());
+  map_voxel.reset(new pcl::PointCloud<pcl::PointXYZI>());
+  pc_input.reset(new pcl::PointCloud<pcl::PointXYZI>());
+  pc_input_voxel.reset(new pcl::PointCloud<pcl::PointXYZI>());
 
-  load_map = (new pcl::PointCloud<pcl::PointXYZI>)->makeShared();
-  if (pcl::io::loadPCDFile<pcl::PointXYZI> ("/home/ray/self-driving-car-2021/catkin_ws/src/309512074_hw4/map/map_downsample.pcd", *load_map) == -1)
+  if (pcl::io::loadPCDFile<pcl::PointXYZI> ("/home/ray/self-driving-car-2021/catkin_ws/src/309512074_hw4/map/map.pcd", *load_map) == -1)
   {
     PCL_ERROR ("Couldn't read file map_downsampled.pcd \n");
     exit(0);
   }
 
   //=======voxel grid filter=====================
-  pcl::VoxelGrid<pcl::PCLPointCloud2> sor_map;
-  pcl::PCLPointCloud2::Ptr map_pc2 (new pcl::PCLPointCloud2 ());
-  pcl::toPCLPointCloud2(*load_map, *map_pc2);
-  sor_map.setInputCloud (map_pc2);
+  cout << "PointCloud before filtering: " << load_map->points.size() << endl;
+  pcl::VoxelGrid<pcl::PointXYZI> sor_map;
+  sor_map.setInputCloud (load_map);
   sor_map.setLeafSize (0.5f, 0.5f, 0.5f);
-  sor_map.filter (*map_pc2);
-  pcl::fromPCLPointCloud2(*map_pc2, *load_map);
-  pcl::toROSMsg(*load_map, map_pc);
+  sor_map.filter (*map_voxel);
+  cout << "PointCloud after filtering: " << map_voxel->points.size() << endl;
+
+  pcl::toROSMsg(*map_voxel, map_pc);
 
   sub_lidar_pc = nh.subscribe("lidar_points", 10, &icp_localization::cb_lidar_pc, this);
   pub_icp_pc = nh.advertise<sensor_msgs::PointCloud2>("ipc_pc", 10);
@@ -116,37 +122,45 @@ Eigen::Matrix4f icp_localization::get_transfrom(std::string link){
 
 void icp_localization::cb_lidar_pc(const sensor_msgs::PointCloud2 &msg){
   
-  pcl::PointCloud<pcl::PointXYZI>::Ptr bag_pc(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::fromROSMsg(msg, *bag_pc);
-
+  pcl::fromROSMsg(msg, *pc_input);
   Eigen::Matrix4f trans = get_transfrom("velodyne");
-	transformPointCloud(*bag_pc, *bag_pc, trans);
+	transformPointCloud(*pc_input, *pc_input, trans);
   ROS_INFO("transformed to base_link");
 
 
-  cout<<"original: "<<bag_pc->points.size()<<endl;
-  //=======voxel grid filter=====================
-  pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
-  pcl::PCLPointCloud2::Ptr bag_pc2 (new pcl::PCLPointCloud2 ());
-  pcl::toPCLPointCloud2(*bag_pc, *bag_pc2);
-  sor.setInputCloud (bag_pc2);
+  cout<<"original: "<< pc_input->points.size()<<endl;
+  //=========filter============
+  pcl::PassThrough<pcl::PointXYZI> pass;
+  pass.setInputCloud(pc_input);
+  pass.setFilterFieldName ("y"); 
+  pass.setFilterLimits (-10, 10);
+  pass.filter (*pc_input);
+  cout<<"filter_y: "<<pc_input->points.size()<<endl;
+
+  pcl::PassThrough<pcl::PointXYZI> pass1;
+  pass1.setInputCloud(pc_input);
+  pass1.setFilterFieldName ("x"); 
+  pass1.setFilterLimits (-25, 25);
+  pass1.filter (*pc_input);
+  cout<<"filter_x: "<<pc_input->points.size()<<endl;
+  
+  // //=======voxel grid filter=====================
+  pcl::VoxelGrid<pcl::PointXYZI> sor;
+  sor.setInputCloud (pc_input);
   sor.setLeafSize (0.5f, 0.5f, 0.5f);
-  sor.filter (*bag_pc2);
-  pcl::fromPCLPointCloud2(*bag_pc2, *bag_pc);
-  cout<<"voxel grid filter: "<<bag_pc->points.size()<<endl;
+  sor.filter (*pc_input_voxel);
+  cout<<"voxel grid filter: "<<pc_input_voxel->points.size()<<endl;
 
   
-
-
   //=======icp==========================
   pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
-  icp.setInputSource(bag_pc);
-  icp.setInputTarget(load_map);
-  icp.setMaximumIterations (5000);
-  icp.setTransformationEpsilon (1e-12);
+  icp.setInputSource(pc_input_voxel);
+  icp.setInputTarget(map_voxel);
+  icp.setMaximumIterations (50);
+  // icp.setTransformationEpsilon (1e-12);
   icp.setMaxCorrespondenceDistance (2);
-  icp.setEuclideanFitnessEpsilon (0.01);
-  icp.setRANSACOutlierRejectionThreshold (0.06);
+  // icp.setEuclideanFitnessEpsilon (0.01);
+  // icp.setRANSACOutlierRejectionThreshold (0.06);
   pcl::PointCloud<pcl::PointXYZI> Final;
   icp.align(Final, initial_guess);
 
@@ -168,11 +182,10 @@ void icp_localization::cb_lidar_pc(const sensor_msgs::PointCloud2 &msg){
   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),"world","base_link"));
 
   // Publish my lidar pointcloud after doing ICP.
-  sensor_msgs::PointCloud2 icp_cloud;
-  pcl::toROSMsg(Final, icp_cloud);
-  icp_cloud.header=msg.header;
-  icp_cloud.header.frame_id = "world";
-  pub_icp_pc.publish(icp_cloud);
+  pcl::toROSMsg(Final, icp_pc);
+  icp_pc.header=msg.header;
+  icp_pc.header.frame_id = "world";
+  pub_icp_pc.publish(icp_pc);
 
   //=======show map===================== 
   map_pc.header.frame_id = "world";
