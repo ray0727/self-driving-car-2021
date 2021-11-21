@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<launch>
+    <arg name="task" default="2" />
+    <node pkg="localization" type="nuscenes_localization" name="nuscenes_localization" output="screen">
+        <param name="task" value="$(arg task)" />        
+        <param name="max_x" value="30" />
+        <param name="min_x" value="5" />
+
+        <param name="max_y" value="15" />
+        <param name="min_y" value="5" />
+
+        <param name="max_z" value="5.25" />
+        <param name="min_z" value="1" />
+    </node>
+
+</launch>

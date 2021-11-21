@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<launch>
+
+    <node pkg="localization" type="task1_localization" name="task1_localization" output="screen"></node>
+
+</launch>
