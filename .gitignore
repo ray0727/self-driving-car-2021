@@ -43,3 +43,8 @@ build/
 .vscode/
 *.zip
 *.pcd
+
+results/
+argoverse_detections_2020/
+argoverse-tracking/
+*.json

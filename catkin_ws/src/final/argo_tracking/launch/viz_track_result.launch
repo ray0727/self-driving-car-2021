@@ -1,0 +1,19 @@
+<launch>
+    <node pkg="rviz"    type="rviz" name="rviz" args="-d $(find argo_tracking)/rviz_config/tracking_result_viz.rviz"/>
+    
+    <arg name="scene_name"              default="1b5c73a4-402b-3139-846f-11e74ba3faed"/>
+    <arg name="tracking_result_folder"  default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse_cbgs_kf_tracker/temp_files/test-split-track-preds-maxage15-minhits5-conf0.3"/>
+    <arg name="argo_data_folder"        default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse-tracking/test"/>
+    <arg name="detection_folder"        default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse_detections_2020/testing"/>
+    
+    
+    <node pkg ="argo_tracking"   type="viz_track_result" name="viz_result"   output="screen">
+        <param name ="log_path"             type="string"       value="$(arg argo_data_folder)/$(arg scene_name)"/>
+        <param name ="label_path"           type="string"       value="$(arg tracking_result_folder)/$(arg scene_name)"/>
+        <param name ="det_path"             type="string"       value="$(arg detection_folder)/$(arg scene_name)"/>
+        <param name ="play_rate"            type="int"          value="5"/>
+        <param name ="id_type"              type="string"       value="uuid"/>
+        <param name ="rviz_wating_time"     type="double"       value="3.0"/>
+    </node>
+
+</launch>
