@@ -259,8 +259,8 @@ if __name__ == '__main__':
     p[7:,7:] *= p_vel_mult
     
     thr_prune = 0.01
-    thr_estimate = 0.5
-    ps = 0.875
+    thr_estimate = 0.3
+    ps = 0.9
 
     
     match_threshold = 0.001

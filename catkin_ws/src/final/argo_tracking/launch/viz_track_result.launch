@@ -2,7 +2,7 @@
     <node pkg="rviz"    type="rviz" name="rviz" args="-d $(find argo_tracking)/rviz_config/tracking_result_viz.rviz"/>
     
     <arg name="scene_name"              default="1b5c73a4-402b-3139-846f-11e74ba3faed"/>
-    <arg name="tracking_result_folder"  default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse_cbgs_kf_tracker/temp_files/test-split-track-preds-maxage15-minhits5-conf0.3"/>
+    <arg name="tracking_result_folder"  default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse_cbgs_kf_tracker/temp_files/tracker_output"/>
     <arg name="argo_data_folder"        default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse-tracking/test"/>
     <arg name="detection_folder"        default="/home/ray/self-driving-car-2021/catkin_ws/src/final/argoverse_detections_2020/testing"/>
     
