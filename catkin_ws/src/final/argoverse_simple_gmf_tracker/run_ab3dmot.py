@@ -246,7 +246,7 @@ if __name__ == '__main__':
     path_results = f"{path_dataset}/results/results_tracking_{split}_cbgs"
     
     thr_estimate = 0.5
-    ps = 0.875
+    ps = 0.9
 
     min_conf = 0.3
     #match_threshold = 10
@@ -259,8 +259,8 @@ if __name__ == '__main__':
     p[7:,7:] *= p_vel_mult
     
     thr_prune = 0.01
-    thr_estimate = 0.3
-    ps = 0.9
+    # thr_estimate = 0.5
+    # ps = 0.875
 
     
     match_threshold = 0.001
